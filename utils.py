@@ -1,0 +1,31 @@
+#===========PYGAME WINDOW CONSTANTS================
+FPS = 30
+WIDTH, HEIGHT = 600, 600
+
+#==========PYGAME COLOR CONSTANTS==================
+BEIGE = (198, 171, 99)
+BLACK = (0, 0, 0)
+BLUE = (0, 0, 255)
+DARK_GRAY = (50, 50, 50)
+GREEN = (0, 255, 0)
+HOMESCREEN_BUTTONS_SIZE = (200, 50)
+LIGHT_GRAY = (150, 150, 150)
+RED = (255, 0, 0)
+WHITE = (255, 255, 255)
+YELLOW = (255, 255, 0)
+
+#==========MINESWEEPER ENUMS================
+SAFE = 0
+N_MINE_1 = 1
+N_MINE_2 = 2
+N_MINE_3 = 3
+N_MINE_4 = 4
+N_MINE_5 = 5
+N_MINE_6 = 6
+N_MINE_7 = 7
+N_MINE_8 = 8
+N_MINE_9 = 9
+MINE = 20
+POP = 21
+EMPTY = 22
+MARKED = 23
