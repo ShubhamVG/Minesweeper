@@ -53,10 +53,9 @@ def draw_board(board: Board, tile_size: int):
         x = i % board.size
         y = i // board.size
 
-
         if tile == EMPTY:
             color = LIGHT_GRAY
-        elif tile == MARKED:
+        elif tile == FLAG:
             color = BEIGE
         elif tile == MINE:
             color = RED
@@ -76,15 +75,15 @@ def draw_board(board: Board, tile_size: int):
 
 def game_over(board: Board):
     text_boldfont = font.SysFont("Corbel", 40, bold=True)
+    text_surface1 = text_boldfont.render("Exit the game now.", True, WHITE)
 
     if board.has_won():
-        text_surface = text_boldfont.render("YOU'VE WON (you cheater).", True, WHITE)
+        text_surface2 = text_boldfont.render("YOU'VE WON (you cheater).", True, WHITE)
     else:
-        text_surface = text_boldfont.render("YOU'VE LOST SUCKER!", True, WHITE)
-    text_surface2 = text_boldfont.render("Exit the game now.", True, WHITE)
+        text_surface2 = text_boldfont.render("YOU'VE LOST SUCKER!", True, WHITE)
 
-    WIN.blit(text_surface, (WIDTH//5, HEIGHT//5))
-    WIN.blit(text_surface2, (WIDTH//4, HEIGHT//4+20))
+    WIN.blit(text_surface2, (WIDTH//5, HEIGHT//5))
+    WIN.blit(text_surface1, (WIDTH//4, HEIGHT//4+20))
 
     Beep(500, 500)
     display.update()

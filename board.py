@@ -1,5 +1,5 @@
 from random import sample
-from utils import EMPTY, MINE, POP, SAFE, MARKED
+from utils import EMPTY, MINE, POP, SAFE, FLAG
 
 Default = -1
 Grid = list[list[int]]
@@ -10,7 +10,7 @@ class Board:
             n_mines = size ** 2 // 4
 
         grid_size = size ** 2
-        mine_positions = sorted(sample(range(grid_size), n_mines))
+        mine_positions = sample(range(grid_size), n_mines)
 
         self.size = size
         self.flags_remaining = n_mines
@@ -78,9 +78,9 @@ class Board:
             # Right click
             if is_mark:
                 if self.playable_board[pos] == EMPTY and self.flags_remaining > 0:
-                    self.playable_board[pos] = MARKED
+                    self.playable_board[pos] = FLAG
                     self.flags_remaining -= 1
-                elif self.playable_board[pos] == MARKED:
+                elif self.playable_board[pos] == FLAG:
                     self.playable_board[pos] = EMPTY
                     self.flags_remaining += 1
                 else:
@@ -95,7 +95,6 @@ class Board:
                         self.pop(pos)
                 else:
                     return False
-                    # add pop too
         except IndexError as e:
             raise e
         
@@ -114,6 +113,7 @@ class Board:
 
     def surrounding_cells(self, pos:int, only_safe:bool = False, only_visitable:bool = False) -> set[int]:
         """`only_visitable` is a superset of `only_safe`."""
+
         cells = set()
         size = self.size
 
@@ -141,7 +141,3 @@ class Board:
                     cells.add(neighbor_pos)
 
         return cells
-    
-if __name__ == "__main__":
-    board = Board(10)
-    
