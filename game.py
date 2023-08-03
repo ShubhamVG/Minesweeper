@@ -46,29 +46,32 @@ def choose_option() -> int:
 
 
 def draw_board(board: Board, tile_size: int):
-    board_state = board.get_playable_board()
+    board_state = board.playable_board
 
-    for x in range(board.size):
-        for y in range(board.size):
-            tile = board_state[x][y]
-            if tile == EMPTY:
-                color = LIGHT_GRAY
-            elif tile == MARKED:
-                color = BEIGE
-            elif tile == MINE:
-                color = RED
-            elif tile == POP:
-                color = YELLOW
-            elif tile == SAFE:
-                color = DARK_GRAY
-            else:
-                text_font = font.SysFont("Sans Serif", tile_size)
-                text_surface = text_font.render(str(tile), True, BLUE)
+    for i in range(board.size ** 2):
+        tile = board_state[i]
+        x = i % board.size
+        y = i // board.size
 
-                WIN.blit(text_surface, (x*tile_size+tile_size//4, y*tile_size+tile_size//4))
-                continue
-            
-            draw.rect(WIN, color, (x*tile_size, y*tile_size, tile_size-1, tile_size-1))
+
+        if tile == EMPTY:
+            color = LIGHT_GRAY
+        elif tile == MARKED:
+            color = BEIGE
+        elif tile == MINE:
+            color = RED
+        elif tile == POP:
+            color = YELLOW
+        elif tile == SAFE:
+            color = DARK_GRAY
+        else:
+            text_font = font.SysFont("Sans Serif", tile_size)
+            text_surface = text_font.render(str(tile), True, BLUE)
+
+            WIN.blit(text_surface, (x*tile_size+tile_size//4, y*tile_size+tile_size//4))
+            continue
+        
+        draw.rect(WIN, color, (x*tile_size, y*tile_size, tile_size-1, tile_size-1))
 
 
 def game_over(board: Board):
@@ -140,15 +143,15 @@ def get_buttons_from_drawn_homescreen() -> tuple[Rect, Rect, Rect]:
 
 
 def handle_click(mouse_pos: tuple[int, int], button: int, board: Board, tile_size: int):
-    mouse_pos = mouse_pos[::-1]
     x, y = int(mouse_pos[0] // tile_size), int(mouse_pos[1] // tile_size)
+    pos = x + y*board.size
 
     match button:
         case 1:
-            if not board.move(x, y):
+            if not board.move(pos):
                 Beep(5000, 150)
         case 3:
-            if not board.move(x, y, True):
+            if not board.move(pos, True):
                 Beep(5000, 150)
         case _:
             return
@@ -170,10 +173,9 @@ def run_game(grid_size:int):
     while run:
         clock.tick(FPS)
 
-        #===============DONT EVEN ACCIDENTALLY DELETE==============
-        # if game_board.is_gameover():
-        #     game_over(game_board)
-        #     return
+        if game_board.is_gameover():
+            game_over(game_board)
+            return
 
         for event in pygame_event.get():
             if (event_type := event.type) == EVENT_QUIT:

@@ -24,7 +24,6 @@ N_MINE_5 = 5
 N_MINE_6 = 6
 N_MINE_7 = 7
 N_MINE_8 = 8
-N_MINE_9 = 9
 MINE = 20
 POP = 21
 EMPTY = 22

@@ -1,7 +1,5 @@
 from random import sample
-# from sys import setrecursionlimit
-# setrecursionlimit(10**6)
-from utils import EMPTY, MINE, POP, SAFE, MARKED, N_MINE_9
+from utils import EMPTY, MINE, POP, SAFE, MARKED
 
 Default = -1
 Grid = list[list[int]]
@@ -12,7 +10,7 @@ class Board:
             n_mines = size ** 2 // 4
 
         grid_size = size ** 2
-        mine_positions = sample(range(grid_size), n_mines)
+        mine_positions = sorted(sample(range(grid_size), n_mines))
 
         self.size = size
         self.flags_remaining = n_mines
@@ -27,10 +25,8 @@ class Board:
 
         for i in range(grid_size):
             if self.board_state[i] == SAFE:
-                if len(self.surrounding_cells(i)) == len(self.surrounding_cells(i, True)):
+                if len(self.surrounding_cells(i)) == len(self.surrounding_cells(i, only_safe=True)):
                     self.board_state[i] = POP
-
-        print(self)
 
 
     def __repr__(self) -> str:
@@ -75,10 +71,8 @@ class Board:
         return False
         
 
-    def move(self, x:int = -1, y:int = -1, is_mark:bool = False, pos:int=-1) -> bool:
+    def move(self, pos:int, is_mark:bool = False) -> bool:
         """Makes a move and returns whether the move was made or not."""
-        if pos == -1:
-            pos = x + self.size * y
 
         try:
             # Right click
@@ -118,42 +112,36 @@ class Board:
                 self.pop(cell)
     
 
-    def surrounding_cells(self, pos:int, only_safe:bool = False, only_visitable:bool = False) -> list[int]:
+    def surrounding_cells(self, pos:int, only_safe:bool = False, only_visitable:bool = False) -> set[int]:
         """`only_visitable` is a superset of `only_safe`."""
-        cells = []
+        cells = set()
         size = self.size
-        grid_size = size ** 2
 
         neighbor_indices = [
-            -size-1, -size, -size+1,
-            -1,                   1,
-            size-1,   size,   size+1
+            (-1, -1), (-1, 0), (-1, 1),
+            (0,  -1),          (0,  1),
+            (1,  -1), (1,  0), (1,  1)
         ]
 
         for neighbour_index in neighbor_indices:
-            neighbor_pos = pos + neighbour_index
+            x = pos % size + neighbour_index[0]
+            y = pos // size + neighbour_index[1]
+            neighbor_pos = x + y*size
 
-            if neighbor_pos < 0 or neighbor_pos >= grid_size:
+            if any([coord < 0 or coord >= size for coord in (x, y)]):
                 continue
             else:
                 if only_safe:
                     if self.board_state[neighbor_pos] != MINE:
-                        cells.append(neighbor_pos)
-                if only_visitable:
+                        cells.add(neighbor_pos)
+                elif only_visitable:
                     if self.board_state[neighbor_pos] != MINE and self.playable_board[neighbor_pos] == EMPTY:
-                        cells.append(neighbor_pos)
+                        cells.add(neighbor_pos)
                 else:
-                    cells.append(neighbor_pos)
+                    cells.add(neighbor_pos)
 
         return cells
     
 if __name__ == "__main__":
     board = Board(10)
-    print(board)
-    x, y = int(input("Enter x: ")), int(input("Enter y: "))
-    board.move(x, y)
-    print(*board.get_playable_board())
-    print(board)
-    pos = int(input("Enter pos: "))
-    print(board.surrounding_cells(pos, only_visitable=True))
     
