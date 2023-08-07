@@ -1,11 +1,14 @@
 from random import sample
 from utils import EMPTY, MINE, POP, SAFE, FLAG
+from numpy import matrix
+from sys import setrecursionlimit
+setrecursionlimit(10**6)
 
 Default = -1
 Grid = list[list[int]]
 
 class Board:
-    def __init__(self, size:int=9, n_mines:int=Default):
+    def __init__(self, size: int = 9, n_mines: int = Default):
         if n_mines == Default:
             n_mines = size ** 2 // 4
 
@@ -39,15 +42,15 @@ class Board:
 
     
     def get_board_state(self) -> Grid:
-        return [
+        return matrix([
             self.board_state[self.size*i : self.size*(i+1)] for i in range(self.size)
-        ]
+        ])
     
 
     def get_playable_board(self) -> Grid:
-        return [
+        return matrix([
             self.playable_board[self.size*i : self.size*(i+1)] for i in range(self.size)
-        ]
+        ])
     
 
     def has_lost(self) -> bool:
@@ -71,7 +74,7 @@ class Board:
         return False
         
 
-    def move(self, pos:int, is_mark:bool = False) -> bool:
+    def move(self, pos: int, is_mark: bool = False) -> bool:
         """Makes a move and returns whether the move was made or not."""
 
         try:
@@ -101,7 +104,7 @@ class Board:
         return True
     
 
-    def pop(self, pos:int):
+    def pop(self, pos: int):
         if len((cells := self.surrounding_cells(pos, only_visitable=True))) == 0:
             return
         
@@ -111,7 +114,7 @@ class Board:
                 self.pop(cell)
     
 
-    def surrounding_cells(self, pos:int, only_safe:bool = False, only_visitable:bool = False) -> set[int]:
+    def surrounding_cells(self, pos: int, only_safe: bool = False, only_visitable: bool = False) -> set[int]:
         """`only_visitable` is a superset of `only_safe`."""
 
         cells = set()

@@ -1,4 +1,5 @@
 from board import Board
+from engine import Childe, Engine, Thoma
 from pygame import (
     display,
     draw,
@@ -16,6 +17,9 @@ from utils import *
 from winsound import Beep
 
 pygame_init()
+
+grid_size: int
+board: Board #Board(grid_size + 9) if grid_size is not None else None # Index returns 0, 1 or 2 so +9 would make for a bigger board size.
 
 clock = time.Clock()
 WIN = display.set_mode((WIDTH, HEIGHT))
@@ -73,11 +77,11 @@ def draw_board(board: Board, tile_size: int):
         draw.rect(WIN, color, (x*tile_size, y*tile_size, tile_size-1, tile_size-1))
 
 
-def game_over(board: Board):
+def game_over(has_won: bool):
     text_boldfont = font.SysFont("Corbel", 40, bold=True)
     text_surface1 = text_boldfont.render("Exit the game now.", True, WHITE)
 
-    if board.has_won():
+    if has_won:
         text_surface2 = text_boldfont.render("YOU'VE WON (you cheater).", True, WHITE)
     else:
         text_surface2 = text_boldfont.render("YOU'VE LOST SUCKER!", True, WHITE)
@@ -156,39 +160,53 @@ def handle_click(mouse_pos: tuple[int, int], button: int, board: Board, tile_siz
             return
 
 
-def run_game(grid_size:int):
-    if grid_size == -1:
+def run_game(game_board: Board|None, engine: Engine|None = None):
+    if game_board is None:
         pygame_quit()
         return
+    elif engine:
+        engine = engine(game_board.playable_board, game_board.flags_remaining)
     
     WIN.fill(BLACK)
 
-    grid_size += 9 # Index returns 0, 1 or 2 so +9 would make it better.
-    game_board = Board(size=grid_size)
+    run = True
     tile_size = WIDTH//game_board.size
 
-    run = True
-
     while run:
-        clock.tick(FPS)
+        draw_board(game_board, tile_size)
+        display.update()
 
-        if game_board.is_gameover():
-            game_over(game_board)
-            return
+        if engine:
+            move, is_flag = engine.best_move()
 
+            game_board.move(move, is_flag)
+            time.wait(100)
+        else:
+            clock.tick(FPS)
+        
         for event in pygame_event.get():
             if (event_type := event.type) == EVENT_QUIT:
                 run = False
-            if event_type == EVENT_MOUSEBUTTONUP:
+                break
+            elif event_type == EVENT_MOUSEBUTTONUP:
                 mouse_pos = mouse.get_pos()
                 handle_click(mouse_pos, event.button, game_board, tile_size)
+
+        if game_board.is_gameover():
+            draw_board(game_board, tile_size)
+            display.update()
+
+            game_over(game_board.has_won())
+            return
         
-        draw_board(game_board, tile_size)
-        display.update()
-    
+        if engine:
+            engine.update_board(game_board.playable_board, game_board.has_lost())
+            engine.update_evaluation()
+
     pygame_quit()
 
 
 if __name__ == "__main__":
-    grid_size = choose_option()
-    run_game(grid_size)
+    grid_len = int(input("Enter grid length: "))
+    board = Board(grid_len+9)
+    run_game(board, engine=Thoma)
