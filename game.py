@@ -1,5 +1,5 @@
 from board import Board
-from engine import Childe, Engine, Thoma
+from engine import Engine
 from pygame import (
     display,
     draw,
@@ -19,19 +19,20 @@ from winsound import Beep
 pygame_init()
 
 grid_size: int
-board: Board #Board(grid_size + 9) if grid_size is not None else None # Index returns 0, 1 or 2 so +9 would make for a bigger board size.
+board: Board
 
 clock = time.Clock()
 WIN = display.set_mode((WIDTH, HEIGHT))
 display.set_caption("Minesweeper")
 
-def choose_option() -> int:
+def choose_option() -> (int, bool):
+    is_checkbox_selected = False
     run = True
 
     while run:
         clock.tick(FPS)
 
-        buttons = get_buttons_from_drawn_homescreen()
+        buttons, checkbox = draw_screen_and_get_buttons(is_checkbox_selected)
 
         for event in pygame_event.get():
             if (event_type := event.type) == EVENT_QUIT:
@@ -39,14 +40,21 @@ def choose_option() -> int:
             
             if event_type == EVENT_MOUSEBUTTONUP:
                 mouse_pos = mouse.get_pos()
+
                 for button in buttons:
                     if button.collidepoint(mouse_pos):
                         run = False
                         break
+                
+                if checkbox.collidepoint(mouse_pos):
+                    is_checkbox_selected = not is_checkbox_selected
             
         display.update()
 
-    return buttons.index(button)
+    return (
+        buttons.index(button) + 9, # index+9 because the index would be in range [0, 2] but the sizes mentioned are [9, 11]
+        is_checkbox_selected
+    )
 
 
 def draw_board(board: Board, tile_size: int):
@@ -82,7 +90,7 @@ def game_over(has_won: bool):
     text_surface1 = text_boldfont.render("Exit the game now.", True, WHITE)
 
     if has_won:
-        text_surface2 = text_boldfont.render("YOU'VE WON (you cheater).", True, WHITE)
+        text_surface2 = text_boldfont.render("CONGRATS! YOU'VE WON.", True, WHITE)
     else:
         text_surface2 = text_boldfont.render("YOU'VE LOST SUCKER!", True, WHITE)
 
@@ -102,7 +110,7 @@ def game_over(has_won: bool):
     pygame_quit()
         
 
-def get_buttons_from_drawn_homescreen() -> tuple[Rect, Rect, Rect]:
+def draw_screen_and_get_buttons(is_checkbox_selected) -> (tuple[Rect, Rect, Rect], Rect):
     WIN.fill(DARK_GRAY)
 
     text_font = font.SysFont("Corbel", 35)
@@ -116,33 +124,41 @@ def get_buttons_from_drawn_homescreen() -> tuple[Rect, Rect, Rect]:
     button_1 = Rect((200, 110), HOMESCREEN_BUTTONS_SIZE)
     button_2 = Rect((200, 180), HOMESCREEN_BUTTONS_SIZE)
     button_3 = Rect((200, 250), HOMESCREEN_BUTTONS_SIZE)
+    checkbox = Rect((210, 320), (30, 30))
+    checkbox_selected_box = Rect((215, 325), (20, 20))
 
     draw.rect(WIN, WHITE, button_1, border_radius=10)
     draw.rect(WIN, WHITE, button_2, border_radius=10)
     draw.rect(WIN, WHITE, button_3, border_radius=10)
+    draw.rect(WIN, WHITE, checkbox, border_radius=5)
+    draw.rect(WIN, BEIGE if is_checkbox_selected else WHITE, checkbox_selected_box, border_radius=5)
 
     # Hover effect
     mouse_pos = mouse.get_pos()
     for button in [button_1, button_2, button_3]:
         if button.collidepoint(mouse_pos):
             button_color = (211, 211, 211)
+
             # Change the button color if the mouse is hovering over it
             draw.rect(WIN, button_color, button, border_radius=10)
 
     button_text_1 = "9x9"
     button_text_2 = "10x10"
     button_text_3 = "11x11"
+    ai_solver_text = "AI Player"
 
     button_text_surface_1 = text_font_bold.render(button_text_1, True, BLACK)
     button_text_surface_2 = text_font_bold.render(button_text_2, True, BLACK)
     button_text_surface_3 = text_font_bold.render(button_text_3, True, BLACK)
+    ai_solver_button = text_font.render(ai_solver_text, True, WHITE)
 
     # Don't ask about the hard-coded button positions. Font is really annoying to work with.
     WIN.blit(button_text_surface_1, (275, 115))
     WIN.blit(button_text_surface_2, (260, 187))
     WIN.blit(button_text_surface_3, (260, 257))
+    WIN.blit(ai_solver_button, (260, 318))
 
-    return (button_1, button_2, button_3)
+    return (button_1, button_2, button_3), checkbox
 
 
 def handle_click(mouse_pos: tuple[int, int], button: int, board: Board, tile_size: int):
@@ -160,12 +176,12 @@ def handle_click(mouse_pos: tuple[int, int], button: int, board: Board, tile_siz
             return
 
 
-def run_game(game_board: Board|None, engine: Engine|None = None):
+def run_game(game_board: Board|None, use_engine: bool = False):
     if game_board is None:
         pygame_quit()
         return
-    elif engine:
-        engine = engine(game_board.playable_board, game_board.flags_remaining)
+    
+    engine = Engine(game_board.playable_board, game_board.flags_remaining) if use_engine else None
     
     WIN.fill(BLACK)
 
@@ -176,7 +192,7 @@ def run_game(game_board: Board|None, engine: Engine|None = None):
         draw_board(game_board, tile_size)
         display.update()
 
-        if engine:
+        if engine is not None:
             move, is_flag = engine.best_move()
 
             game_board.move(move, is_flag)
@@ -188,7 +204,7 @@ def run_game(game_board: Board|None, engine: Engine|None = None):
             if (event_type := event.type) == EVENT_QUIT:
                 run = False
                 break
-            elif event_type == EVENT_MOUSEBUTTONUP:
+            elif event_type == EVENT_MOUSEBUTTONUP and engine is None:
                 mouse_pos = mouse.get_pos()
                 handle_click(mouse_pos, event.button, game_board, tile_size)
 
@@ -199,14 +215,8 @@ def run_game(game_board: Board|None, engine: Engine|None = None):
             game_over(game_board.has_won())
             return
         
-        if engine:
+        if engine is not None:
             engine.update_board(game_board.playable_board, game_board.has_lost())
             engine.update_evaluation()
 
     pygame_quit()
-
-
-if __name__ == "__main__":
-    grid_len = int(input("Enter grid length: "))
-    board = Board(grid_len+9)
-    run_game(board, engine=Thoma)

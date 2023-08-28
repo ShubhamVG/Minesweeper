@@ -33,12 +33,7 @@ class Board:
 
 
     def __repr__(self) -> str:
-        str_repr = ""
-
-        for row in self.get_board_state():
-            str_repr += str(row) + "\n" 
-
-        return str_repr
+        return str(self.get_board_state())
 
     
     def get_board_state(self) -> Grid:
@@ -74,12 +69,12 @@ class Board:
         return False
         
 
-    def move(self, pos: int, is_mark: bool = False) -> bool:
+    def move(self, pos: int, is_flag: bool = False) -> bool:
         """Makes a move and returns whether the move was made or not."""
 
         try:
             # Right click
-            if is_mark:
+            if is_flag:
                 if self.playable_board[pos] == EMPTY and self.flags_remaining > 0:
                     self.playable_board[pos] = FLAG
                     self.flags_remaining -= 1
@@ -129,11 +124,12 @@ class Board:
         for neighbour_index in neighbor_indices:
             x = pos % size + neighbour_index[0]
             y = pos // size + neighbour_index[1]
-            neighbor_pos = x + y*size
 
             if any([coord < 0 or coord >= size for coord in (x, y)]):
                 continue
             else:
+                neighbor_pos = x + y*size
+                
                 if only_safe:
                     if self.board_state[neighbor_pos] != MINE:
                         cells.add(neighbor_pos)
